@@ -27,7 +27,7 @@ app.get("/", (req,res) =>{
 });
 
 const start = async () => {
-    const connectionDb = await mongoose.connect("mongodb+srv://<username>:<password>@cluster0.nnvtmm9.mongodb.net/");
+    const connectionDb = await mongoose.connect("<URL FROM MONGODB>");
     server.listen(app.get("port"), () => {
         console.log("Server is running on port " + app.get("port"));
     });
