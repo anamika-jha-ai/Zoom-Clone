@@ -51,6 +51,9 @@ export default function Authentication() {
         console.log("Button clicked");
 
         try {
+            if(formState===0){
+                let result= await handleLogin(username , password);
+            }
             if (formState === 1) {
                 console.log("Registering:", name, username, email, password);
 
