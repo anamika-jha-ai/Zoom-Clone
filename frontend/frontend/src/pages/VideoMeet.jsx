@@ -1,16 +1,16 @@
 import React, { useRef, useState, useEffect } from "react";
-// import io from "socket.io-client";
-// import { Badge, IconButton, TextField } from '@mui/material';
-// import { Button } from '@mui/material';
-// import VideocamIcon from '@mui/icons-material/Videocam';
-// import VideocamOffIcon from '@mui/icons-material/VideocamOff'
+import io from "socket.io-client";
+import { Badge, IconButton, TextField } from '@mui/material';
+import { Button } from '@mui/material';
+import VideocamIcon from '@mui/icons-material/Videocam';
+import VideocamOffIcon from '@mui/icons-material/VideocamOff'
 import styles from "../styles/videoComponent.css";
-// import CallEndIcon from '@mui/icons-material/CallEnd'
-// import MicIcon from '@mui/icons-material/Mic'
-// import MicOffIcon from '@mui/icons-material/MicOff'
-// import ScreenShareIcon from '@mui/icons-material/ScreenShare';
-// import StopScreenShareIcon from '@mui/icons-material/StopScreenShare'
-// import ChatIcon from '@mui/icons-material/Chat'
+import CallEndIcon from '@mui/icons-material/CallEnd'
+import MicIcon from '@mui/icons-material/Mic'
+import MicOffIcon from '@mui/icons-material/MicOff'
+import ScreenShareIcon from '@mui/icons-material/ScreenShare';
+import StopScreenShareIcon from '@mui/icons-material/StopScreenShare'
+import ChatIcon from '@mui/icons-material/Chat'
 // import server from '../environment';
 
 const server_url = "http://localhost:8000";
@@ -19,8 +19,7 @@ var connections = {}
 
 const peerConfigConnection = {
     "iceServers": [
-        { "urls": "stun:sturn.l.google.com:19302" }
-    ]
+        { urls: "stun:stun.l.google.com:19302" }]
 }
 
 
@@ -38,29 +37,82 @@ export default function VideoMeetComponent() {
     let [screenAvailable, setScreenAvailable] = useState();
     let [messages, setMessages] = useState([]);
     let [message, setMessage] = useState("");
-    let[newMessages , setNewMessages] = useState(3);
-    let[askForUsername , setAskForUsername] = useState(true);//for guest users
-    let[userName , setUserName] = useState("");
-    
+    let [newMessages, setNewMessages] = useState(3);
+    let [askForUsername, setAskForUsername] = useState(true);//for guest users
+    let [userName, setUserName] = useState("");
+
     const videoRef = useRef([]);
 
-    let[videos , setVideos] = useState();
+    let [videos, setVideos] = useState();
 
 
     // TO DO LATER 
     //if(isChrome() === false){
     //}
 
+    const getPermission = async () => {
+        try {
+            const videoPermission = await navigator.mediaDevices.getUserMedia({ video: true });
+            if (videoPermission) {
+                setVideoAvailable(true);
+            } else {
+                setVideoAvailable(false);
+            }
 
+            const audioPermission = await navigator.mediaDevices.getUserMedia({ audio: true });
+            if (audioPermission) {
+                setAudioAvailable(true);
+            } else {
+                setAudioAvailable(false);
+            }
+
+            if(navigator.mediaDevices.getDisplayMedia){
+                setScreenAvailable(true);
+            }else{
+                setScreenAvailable(false);
+            }
+            let userMediaStream;
+            if(videoAvailable || audioAvailable){
+                 userMediaStream = await navigator.mediaDevices.getUserMedia({video: true , audio: true});
+            }
+            if(userMediaStream){
+                window.localStream = userMediaStream;
+                if(localVideoRef.current ){
+                    localVideoRef.current.srcObject = userMediaStream;
+                }
+            }
+        }
+        catch {
+
+        }
+    }
+
+    useEffect(() => {
+        getPermission();
+    }, []);
 
 
     return (
-        <div> 
+        <div>
             {
-                askForUsername ===true?
-                <div>
+                askForUsername === true ?
+                    <div>
+                        <h2>Enter into lobby</h2>
+                        <TextField
+                            id="outlined-basic"
+                            label="Username"
+                            value={userName}
+                            onChange={(e) => setUserName(e.target.value)}
+                            variant="outlined"
+                        />
+                        <Button variant="contained">Connect</Button>
 
-                </div> : <></>
+                        <div>
+                            <video ref={localVideoRef} autoPlay muted></video>
+                        </div>
+
+
+                    </div> : <></>
             }
         </div>
     )
