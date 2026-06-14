@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import io from "socket.io-client";
+import io, { connect } from "socket.io-client";
 import { Badge, IconButton, TextField } from '@mui/material';
 import { Button } from '@mui/material';
 import VideocamIcon from '@mui/icons-material/Videocam';
@@ -21,6 +21,7 @@ const peerConfigConnection = {
     "iceServers": [
         { urls: "stun:stun.l.google.com:19302" }]
 }
+
 
 
 export default function VideoMeetComponent() {
@@ -66,18 +67,18 @@ export default function VideoMeetComponent() {
                 setAudioAvailable(false);
             }
 
-            if(navigator.mediaDevices.getDisplayMedia){
+            if (navigator.mediaDevices.getDisplayMedia) {
                 setScreenAvailable(true);
-            }else{
+            } else {
                 setScreenAvailable(false);
             }
             let userMediaStream;
-            if(videoAvailable || audioAvailable){
-                 userMediaStream = await navigator.mediaDevices.getUserMedia({video: true , audio: true});
+            if (videoAvailable || audioAvailable) {
+                userMediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
             }
-            if(userMediaStream){
+            if (userMediaStream) {
                 window.localStream = userMediaStream;
-                if(localVideoRef.current ){
+                if (localVideoRef.current) {
                     localVideoRef.current.srcObject = userMediaStream;
                 }
             }
@@ -87,10 +88,45 @@ export default function VideoMeetComponent() {
         }
     }
 
+    let getUserMedia = () => {
+        if((video && videoAvailable) || (audio && audioAvailable)){
+            navigator.mediaDevices.getUserMedia({video: video , audio: audio})
+            .then((getUserMediaSucess) => {})//TODO GET USERMEDIA SUCESS
+            .then((stream) => {})
+            .catch((e) => console.log(e))
+        }else{
+            try{
+                let tracks = localVideoRef.current.srcObject.getTracks();
+                tracks.forEach(track => track.stop())
+            } catch(e){
+
+            }
+        }
+    }
+
     useEffect(() => {
         getPermission();
     }, []);
 
+    useEffect(() => {
+        if(video !== undefined && audio!== undefined){
+            getUserMedia();
+        }
+    },[audio, video]);
+
+    const connectToSocketServer = () => {
+        socketRef.current = io(server_url);
+
+        socketRef.current.on("connect", () => {
+            console.log("Connected:", socketRef.current.id);
+            socketIdRef.current = socketRef.current.id;
+        });
+    };
+    let getMedia = () => {
+        setVideo(videoAvailable);
+        setAudio(audioAvailable);
+        connectToSocketServer();
+    }
 
     return (
         <div>
@@ -105,8 +141,12 @@ export default function VideoMeetComponent() {
                             onChange={(e) => setUserName(e.target.value)}
                             variant="outlined"
                         />
-                        <Button variant="contained">Connect</Button>
-
+                        <Button
+                            variant="contained"
+                            onClick={connect}
+                        >
+                            Connect
+                        </Button>
                         <div>
                             <video ref={localVideoRef} autoPlay muted></video>
                         </div>
