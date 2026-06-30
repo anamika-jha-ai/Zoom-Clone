@@ -114,12 +114,32 @@ export default function VideoMeetComponent() {
         }
     },[audio, video]);
 
+    //TODO
+    let gotMessageFromServer = (fromId, message) =>{
+         
+    }
+
+    //TODO 
+    let addMessage = () => {
+
+    }
+
     const connectToSocketServer = () => {
-        socketRef.current = io(server_url);
+        socketRef.current = io(server_url, {secure: false});
+        socketRef.current.on('signal', gotMessageFromServer);
 
         socketRef.current.on("connect", () => {
-            console.log("Connected:", socketRef.current.id);
-            socketIdRef.current = socketRef.current.id;
+           socketRef.current.emit("join-call", window.location.href);
+           socketIdRef.current = socketRef.current.id;
+           socketRef.current.on("chat-message", addMessage);
+           socketRef.current.on("user-left", (id) =>{
+                setVideo((videos) => videos.filter((video)=> video.socketId !== id))
+           })
+           socketRef.current.on("user-joined", (id,clients) =>{
+            clients.forEach((socketListId) =>{
+                connections[socketListId] = new RTCPeerConnection(peerConfigConnection)
+            })
+           })
         });
     };
     let getMedia = () => {
