@@ -88,6 +88,62 @@ export default function VideoMeetComponent() {
         }
     }
 
+    useEffect(() => {
+        if (video !== undefined && audio !== undefined) {
+            getUserMedia();
+            console.log("SET STATE HAS ", video, audio);
+
+        }
+
+
+    }, [video, audio])
+
+
+    let getMedia = () => {
+        setVideo(videoAvailable);
+        setAudio(audioAvailable);
+        connectToSocketServer();
+    }
+
+    let getUserMediaSucess = (stream) => {
+        try{
+            window.localStream.getTracks().forEach(track => track.stop())
+        } catch(e){
+            console.log(e);
+        }
+        window.localStream = stream;
+        localVideoRef.current.srcObject = stream;
+
+        for(let id in connections){
+            if(id === socketIdRef.current) continue;
+
+            connections[id].addStream(window.localStream)
+
+            connections[id].createOffer().then((description) => {
+                connections[id].setLocalDescription(description)
+                .then(() =>{
+                    socketIdRef.current.emit("signal",id,JSON.stringify({"sdp": connections[id].setLocalDescription}))
+                })
+                .catch(e => console.log(e))
+            })
+        }
+
+        stream.getTracks().forEach(track => track.oneded = () => {
+            setVideo(false)
+            setAudio(false);
+
+            try{
+                let tracks = localVideoRef.current.srcObject.getTracks()
+                tracks.forEach(track => track.stop ())
+            } catch (e){
+                console.log(e);
+            }
+        })
+    }
+    
+
+
+
     let getUserMedia = () => {
         if ((video && videoAvailable) || (audio && audioAvailable)) {
             navigator.mediaDevices.getUserMedia({ video: video, audio: audio })
@@ -160,9 +216,9 @@ export default function VideoMeetComponent() {
                                 videoRef.current = updatedVideos;
                                 return updatedVideos;
                             })
-                        }else{
+                        } else {
                             let newVideo = {
-                                socketId : socketListId,
+                                socketId: socketListId,
                                 stream: event.stream,
                                 autoPlay: true,
                                 playsinline: true
@@ -179,40 +235,36 @@ export default function VideoMeetComponent() {
 
                     };
                     //Object with window keyword can be accsessed anywhere even in browser console window
-                    if(window.localStream !== undefined && window.localStream !== null){
+                    if (window.localStream !== undefined && window.localStream !== null) {
                         connections[socketListId].addStream(window.localStream);
-                    }else{
+                    } else {
                         //TODO BLACKSILENCE
                     }
                 })
 
                 //offer letter
-                if(id === socketIdRef.current){
-                    for(let id2 in connections){
-                        if(id2===socketIdRef.current) continue
+                if (id === socketIdRef.current) {
+                    for (let id2 in connections) {
+                        if (id2 === socketIdRef.current) continue
 
-                        try{
+                        try {
                             connections[id2].addStream(window.localStream)
-                        }catch(e){
+                        } catch (e) {
 
                         }
                         connections[id2].createOffer().then((description) => {
                             connections[id2].setLocalDescription(description)
-                            .then(()=>{
-                                socketRef.current.emit("signal", id2, JSON.stringify({"sdp": connections[id2].setLocalDescription})) //sdp means session description
-                            })
-                            .catch(e => console.log(e))
+                                .then(() => {
+                                    socketRef.current.emit("signal", id2, JSON.stringify({ "sdp": connections[id2].setLocalDescription })) //sdp means session description
+                                })
+                                .catch(e => console.log(e))
                         })
                     }
                 }
             })
         });
     };
-    let getMedia = () => {
-        setVideo(videoAvailable);
-        setAudio(audioAvailable);
-        connectToSocketServer();
-    }
+
 
     return (
         <div>
