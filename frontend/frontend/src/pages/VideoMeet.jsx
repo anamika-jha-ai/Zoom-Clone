@@ -4,13 +4,14 @@ import { Badge, IconButton, TextField } from '@mui/material';
 import { Button } from '@mui/material';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import VideocamOffIcon from '@mui/icons-material/VideocamOff'
-import styles from "../styles/videoComponent.css";
+import styles from "../styles/videoComponent.module.css";
 import CallEndIcon from '@mui/icons-material/CallEnd'
 import MicIcon from '@mui/icons-material/Mic'
 import MicOffIcon from '@mui/icons-material/MicOff'
 import ScreenShareIcon from '@mui/icons-material/ScreenShare';
 import StopScreenShareIcon from '@mui/icons-material/StopScreenShare'
 import ChatIcon from '@mui/icons-material/Chat'
+
 // import server from '../environment';
 
 const server_url = "http://localhost:8000";
@@ -123,7 +124,7 @@ export default function VideoMeetComponent() {
             connections[id].createOffer().then((description) => {
                 connections[id].setLocalDescription(description)
                     .then(() => {
-                        socketIdRef.current.emit("signal", id, JSON.stringify({ "sdp": connections[id].setLocalDescription }))
+                        socketRef.current.emit("signal", id, JSON.stringify({ "sdp": description }))
                     })
                     .catch(e => console.log(e))
             })
@@ -172,12 +173,12 @@ export default function VideoMeetComponent() {
     let getUserMedia = () => {
         if ((video && videoAvailable) || (audio && audioAvailable)) {
             navigator.mediaDevices
-            .getUserMedia({
-                video,
-                audio
-            })
-                .then((getUserMediaSucess) => { })//TODO GET USERMEDIA SUCESS
-                .then((stream) => { })
+                .getUserMedia({
+                    video,
+                    audio
+                })
+                .then(getUserMediaSucess) //TODO GET USERMEDIA SUCESS
+                // .then((stream) => { })
                 .catch((e) => console.log(e))
         } else {
             try {
@@ -193,16 +194,82 @@ export default function VideoMeetComponent() {
         getPermission();
     }, []);
 
-    useEffect(() => {
-        if (video !== undefined && audio !== undefined) {
-            getUserMedia();
-        }
-    }, [audio, video]);
+    // useEffect(() => {
+    //     if (video !== undefined && audio !== undefined) {
+    //         getUserMedia();
+    //     }
+    // }, [audio, video]);
 
     //TODO
-    let gotMessageFromServer = (fromId, message) => {
+    // let gotMessageFromServer = (fromId, message) => {
+    //     var signal = JSON.parse(message);
+    //     if (fromId !== socketIdRef.current) {
+    //         if (signal.sdp) {
+    //             connections[fromId].setRemoteDescription(new RTCSessionDescription(signal.sdp)).then(() => {
+    //                 if (signal.sdp.type === "offer") {
+    //                     connections[fromId].createAnswer().then((description) => {
+    //                         connections[fromId].setLocalDescription(description).then(() => {
+    //                             socketRef.current.emit("signal", fromId, JSON.stringify({ "sdp": description }))
+    //                         }).catch(e => console.log(e))
+    //                     }).catch(e => console.log(e))
+    //                 }
+    //             }).catch(e => console.log(e))
+    //         }
+    //     }
+    //     if (signal.ice) {
+    //         connections[fromId].addIceCandidate(new RTCIceCandidate(signal.ice)).catch(e => console.log(e))
+    //     }
+    // }
+    let gotMessageFromServer = async (fromId, message) => {
+    const signal = JSON.parse(message);
 
+    if (fromId === socketIdRef.current) return;
+
+    const peer = connections[fromId];
+
+    // Peer connection doesn't exist yet
+    if (!peer) {
+        console.log("No peer connection yet for:", fromId);
+        return;
     }
+
+    try {
+        if (signal.sdp) {
+            await peer.setRemoteDescription(
+                new RTCSessionDescription(signal.sdp)
+            );
+
+            if (signal.sdp.type === "offer") {
+                const answer = await peer.createAnswer();
+
+                await peer.setLocalDescription(answer);
+
+                socketRef.current.emit(
+                    "signal",
+                    fromId,
+                    JSON.stringify({
+                        sdp: answer
+                    })
+                );
+            }
+        }
+
+        if (signal.ice) {
+            if (peer.remoteDescription) {
+                await peer.addIceCandidate(
+                    new RTCIceCandidate(signal.ice)
+                );
+            } else {
+                console.log(
+                    "ICE skipped because remote description is not ready:",
+                    fromId
+                );
+            }
+        }
+    } catch (e) {
+        console.error("WebRTC signaling error:", e);
+    }
+};
 
     //TODO 
     let addMessage = () => {
@@ -230,7 +297,7 @@ export default function VideoMeetComponent() {
 
 
             socketRef.current.on("user-left", (id) => {
-                setVideo((videos) => videos.filter((video) => video.socketId !== id))
+                setVideos((videos) => videos.filter((video) => video.socketId !== id))
             })
 
             socketRef.current.on("user-joined", (id, clients) => {
@@ -243,7 +310,19 @@ export default function VideoMeetComponent() {
 
 
                 clients.forEach((socketListId) => {
+                    // connections[socketListId] = new RTCPeerConnection(peerConfigConnection);
+
+
+                    ///////////
+                    // Don't create a peer connection with yourself
+                    if (socketListId === socketIdRef.current) return;
+
+                    // Don't recreate an existing peer connection
+                    if (connections[socketListId]) return;
+                    ///////
+                    
                     connections[socketListId] = new RTCPeerConnection(peerConfigConnection);
+
                     connections[socketListId].onicecandidate = (event) => { // ICE is a protocol its name is interactive connectivity establishment this whole code is to establish connection btw two
                         if (event.candidate !== null) {
                             socketRef.current.emit("signal", socketListId, JSON.stringify({ 'ice': event.candidate }))
@@ -255,13 +334,13 @@ export default function VideoMeetComponent() {
                         ////////////////
                         console.log("Remote stream received");
                         console.log(event.stream);
-                        
+
                         ////////////////
 
                         // "..." is a spread operater in JS used when we don't want to push 
                         let videoExists = videoRef.current.find(video => video.socketId === socketListId);
                         if (videoExists) {
-                            setVideo(videos => {
+                            setVideos(videos => {
                                 const updatedVideos = videos.map(video =>
                                     video.socketId === socketListId ? { ...video, stream: event.stream } : video
                                 );
@@ -346,26 +425,28 @@ export default function VideoMeetComponent() {
 
 
 
-                    </div> : <>
+                    </div> :
+                    <div className={styles.VideoMeetComponent}>
                         <video ref={localVideoRef} autoPlay muted></video>
-                        {
-                            videos.map((video) => (
-                                <div key={video.socketId}>
-                                    <h2>{video.socketId}</h2>
-                                    <video
-                                        data-socket={video.socketId}
-                                        ref={ref => {
-                                            if (ref) {
-                                                ref.srcObject = video.stream;
-                                            }
-                                        }}
-                                        autoPlay
+                        {videos.map((video) => (
+                            <div key={video.socketId}>
+                                <h2>{video.socketId}</h2>
+                                <video
+                                    data-socket={video.socketId}
+                                    ref={ref => {
+                                        if (ref && video.stream) {
+                                            ref.srcObject = video.stream;
+                                        }
+                                    }}
+                                    autoPlay
 
-                                    ></video>
-                                </div>
-                            ))}
+                                >
 
-                    </>
+                                </video>
+                            </div>
+                        ))}
+
+                    </div>
             }
         </div>
     )
