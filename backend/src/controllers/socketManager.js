@@ -31,6 +31,16 @@ export const connectToSocket = (server) => { //Receives Express HTTP server.
 
             timeOnline[socket.id] = Date.now();
 
+            ////////////////
+            connections[path].forEach((socketId) => {
+                io.to(socketId).emit(
+                    "user-joined",
+                    socket.id,
+                    connections[path]
+                );
+            });
+            ////////////////
+
             //Chat History Logic
             //Loop through users in room.
             if (messages[path]) {
@@ -96,7 +106,11 @@ export const connectToSocket = (server) => { //Receives Express HTTP server.
                         var index = connections[k].indexOf(socket.id);
                         connections[k].splice(index, 1);
                     }
-
+                    ////////////
+                    connections[k].forEach((socketId) => {
+                        io.to(socketId).emit("user-left", socket.id);
+                    });
+                    ///////////
                     //Delete Empty Room
                     if (connections[k].length == 0) {
                         delete connections[k]
