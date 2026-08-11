@@ -125,7 +125,14 @@ export default function VideoMeetComponent() {
         setAudio(!audio);
     }
     let getDisplayMedia = () => {
-        
+        if(screen){
+            if(navigator.mediaDevices.getDisplayMedia){
+                navigator.mediaDevices.getDisplayMedia({ video: true, audio: true }).then((stream) => {
+                    window.localStream = stream;
+                    localVideoRef.current.srcObject = stream;
+                });
+            }
+        }
     }
     useEffect(() => {
         if (video !== undefined && audio !== undefined) {
