@@ -5,12 +5,14 @@ import { Button } from '@mui/material';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import VideocamOffIcon from '@mui/icons-material/VideocamOff'
 import styles from "../styles/videoComponent.module.css";
+import { CallEnd } from '@mui/icons-material'
 import CallEndIcon from '@mui/icons-material/CallEnd'
 import MicIcon from '@mui/icons-material/Mic'
 import MicOffIcon from '@mui/icons-material/MicOff'
 import ScreenShareIcon from '@mui/icons-material/ScreenShare';
-import StopScreenShareIcon from '@mui/icons-material/StopScreenShare'
+import StopScreenShareIcon from '@mui/icons-material/StopScreenShare';
 import ChatIcon from '@mui/icons-material/Chat'
+
 
 // import server from '../environment';
 
@@ -110,6 +112,29 @@ export default function VideoMeetComponent() {
         setAudio(audioAvailable);
 
         connectToSocketServer();
+    }
+
+    let connect = () => {
+        setAskForUsername(false);
+        getMedia();
+    }
+    let handleVideo = () => {
+        setVideo(!video);
+    }
+    let handleAudio = () => {
+        setAudio(!audio);
+    }
+    let getDisplayMedia = () => {
+        
+    }
+    useEffect(() => {
+        if (video !== undefined && audio !== undefined) {
+            getUserMedia();
+        }
+    }, [screen])
+
+    let handleScreen = () => {
+        setScreen(!screen);
     }
 
     let getUserMediaSucess = (stream) => {
@@ -341,43 +366,44 @@ export default function VideoMeetComponent() {
 
                         const remoteStream = event.streams[0];
 
-                        console.log("Remote stream received");
+                        console.log("Remote stream received:", socketListId);
                         console.log(remoteStream);
 
-                        let videoExists = videoRef.current.find(
-                            video => video.socketId === socketListId
-                        );
+                        setVideos(prevVideos => {
 
-                        if (videoExists) {
+                            const existingVideo = prevVideos.find(
+                                video => video.socketId === socketListId
+                            );
 
-                            setVideos(videos => {
-                                const updatedVideos = videos.map(video =>
+                            if (existingVideo) {
+
+                                const updatedVideos = prevVideos.map(video =>
                                     video.socketId === socketListId
-                                        ? { ...video, stream: remoteStream }
+                                        ? {
+                                            ...video,
+                                            stream: remoteStream
+                                        }
                                         : video
                                 );
 
                                 videoRef.current = updatedVideos;
 
                                 return updatedVideos;
-                            });
-
-                        } else {
+                            }
 
                             const newVideo = {
                                 socketId: socketListId,
                                 stream: remoteStream,
                                 autoPlay: true,
                                 playsInline: true
-                                
                             };
 
-                            setVideos(videos => {
-                                const updatedVideos = [...videos, newVideo];
-                                videoRef.current = updatedVideos;
-                                return updatedVideos;
-                            });
-                        }
+                            const updatedVideos = [...prevVideos, newVideo];
+
+                            videoRef.current = updatedVideos;
+
+                            return updatedVideos;
+                        });
                     };
                     //Object with window keyword can be accsessed anywhere even in browser console window
                     if (window.localStream) {
@@ -403,13 +429,13 @@ export default function VideoMeetComponent() {
                     for (let id2 in connections) {
                         if (id2 === socketIdRef.current) continue
 
-                        try {
-                            window.localStream.getTracks().forEach(track => {
-                                connections[id2].addTrack(track, window.localStream);
-                            });
-                        } catch (e) {
+                        // try {
+                        //     window.localStream.getTracks().forEach(track => {
+                        //         connections[id2].addTrack(track, window.localStream);
+                        //     });
+                        // } catch (e) {
 
-                        }
+                        // }
                         connections[id2].createOffer().then((description) => {
                             connections[id2].setLocalDescription(description)
                                 .then(() => {
@@ -453,31 +479,52 @@ export default function VideoMeetComponent() {
                     <div className={styles.meetVideoContainer}>
 
                         <div className={styles.buttonContainers}>
-                            <IconButton>
+                            <IconButton onClick={handleVideo} style={{ color: "white" }}>
                                 {(video === true) ? <VideocamIcon /> : <VideocamOffIcon />}
                             </IconButton>
+                            <IconButton style={{ color: "red" }}>
+                                <CallEndIcon />
+                            </IconButton>
+                            <IconButton onClick={handleAudio} style={{ color: "white" }}>
+                                {audio === true ? <MicIcon></MicIcon> : <MicOffIcon></MicOffIcon>}
+                            </IconButton>
+                            {screenAvailable === true ?
+                                <IconButton style={{ color: "white" }}>
+                                    {screen === true ? <StopScreenShareIcon></StopScreenShareIcon> : <ScreenShareIcon></ScreenShareIcon>}
+                                </IconButton>
+                                : null
+                            }
+                            <Badge badgeContent={newMessages} color="secondary">
+                                <IconButton style={{ color: "white" }}>
+                                    <ChatIcon></ChatIcon>
+                                </IconButton>
+                            </Badge>
+
                         </div>
                         <video className={styles.meetUserVideo} ref={localVideoRef} autoPlay muted></video>
-                        {videos.map((video) => (
-                            <div key={video.socketId}>
-                                <h2>{video.socketId}</h2>
-                                <video
-                                    data-socket={video.socketId}
-                                    ref={ref => {
-                                        if (ref && video.stream) {
-                                            ref.srcObject = video.stream;
-                                        }
-                                    }}
-                                    autoPlay
+                        <div className={styles.conferenceView}>
+                            {videos.map((video) => (
+                                <div key={video.socketId}>
+                                    <h2>{video.socketId}</h2>
+                                    <video
+                                        data-socket={video.socketId}
+                                        ref={ref => {
+                                            if (ref && video.stream) {
+                                                ref.srcObject = video.stream;
+                                            }
+                                        }}
+                                        autoPlay
+                                        playsInline
+                                    />
 
-                                >
 
-                                </video>
-                            </div>
-                        ))}
+                                </div>
+
+                            ))}
+                        </div>
 
                     </div>
             }
-        </div>
+        </div >
     )
 }
