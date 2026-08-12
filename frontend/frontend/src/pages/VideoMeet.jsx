@@ -124,25 +124,72 @@ export default function VideoMeetComponent() {
     let handleAudio = () => {
         setAudio(!audio);
     }
-    let getDisplayMedia = () => {
-        if(screen){
-            if(navigator.mediaDevices.getDisplayMedia){
-                navigator.mediaDevices.getDisplayMedia({ video: true, audio: true }).then((stream) => {
-                    window.localStream = stream;
-                    localVideoRef.current.srcObject = stream;
-                });
-            }
+
+    let getDisplayMediaSucess = async (stream) => {
+    try {
+        window.localStream.getTracks().forEach(track => track.stop());
+    } catch (e) {
+        console.log(e);
+    }
+
+    window.localStream = stream;
+    localVideoRef.current.srcObject = stream;
+
+    for (let id in connections) {
+        if (id === socketIdRef.current) continue;
+
+        stream.getTracks().forEach(track => {
+            connections[id].addTrack(track, stream);
+        });
+
+        try {
+            const offer = await connections[id].createOffer();
+
+            await connections[id].setLocalDescription(offer);
+
+            socketRef.current.emit(
+                "signal",
+                id,
+                JSON.stringify({
+                    sdp: connections[id].localDescription
+                })
+            );
+        } catch (e) {
+            console.log("Screen share offer error:", e);
         }
     }
-    useEffect(() => {
-        if (video !== undefined && audio !== undefined) {
-            getUserMedia();
-        }
-    }, [screen])
+
+    stream.getVideoTracks()[0].onended = () => {
+        setScreen(false);
+
+        getUserMedia();
+    };
+};
+
+
+   let getDisplayMedia = () => {
+    if(navigator.mediaDevices.getDisplayMedia){
+        navigator.mediaDevices.getDisplayMedia({ video: true, audio: true }) 
+            .then(getDisplayMediaSucess)
+            .then((stream) => { })
+            .catch((e) => console.log(e))
+    }
+}
+    // useEffect(() => {
+    //     if (video !== undefined && audio !== undefined) {
+    //         getUserMedia();
+    //     }
+    // }, [screen])
 
     let handleScreen = () => {
-        setScreen(!screen);
+    if (!screen) {
+        setScreen(true);
+        getDisplayMedia();
+    } else {
+        setScreen(false);
+        getUserMedia();
     }
+}
 
     let getUserMediaSucess = (stream) => {
         // try {
@@ -496,7 +543,7 @@ export default function VideoMeetComponent() {
                                 {audio === true ? <MicIcon></MicIcon> : <MicOffIcon></MicOffIcon>}
                             </IconButton>
                             {screenAvailable === true ?
-                                <IconButton style={{ color: "white" }}>
+                                <IconButton onClick={handleScreen} style={{ color: "white" }}>
                                     {screen === true ? <StopScreenShareIcon></StopScreenShareIcon> : <ScreenShareIcon></ScreenShareIcon>}
                                 </IconButton>
                                 : null
