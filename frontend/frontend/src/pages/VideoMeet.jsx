@@ -531,6 +531,11 @@ export default function VideoMeetComponent() {
 
                     </div> :
                     <div className={styles.meetVideoContainer}>
+                        {showModal ? <div className={styles.modal}>Modal Content</div> : null}
+
+                        <div className={styles.chatRoom}>
+                            <h1>Chat Room</h1>
+                        </div>
 
                         <div className={styles.buttonContainers}>
                             <IconButton onClick={handleVideo} style={{ color: "white" }}>
