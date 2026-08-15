@@ -531,11 +531,13 @@ export default function VideoMeetComponent() {
 
                     </div> :
                     <div className={styles.meetVideoContainer}>
-                        {showModal ? <div className={styles.modal}>Modal Content</div> : null}
-
-                        <div className={styles.chatRoom}>
-                            <h1>Chat Room</h1>
-                        </div>
+                         {showModal ? <div className = {styles.chatRoom}>
+                           <div className = {styles.chatContainer}>
+                             <h1>Chat</h1>
+                             
+                             
+                           </div>
+                    </div> : <></> }
 
                         <div className={styles.buttonContainers}>
                             <IconButton onClick={handleVideo} style={{ color: "white" }}>
@@ -554,7 +556,7 @@ export default function VideoMeetComponent() {
                                 : null
                             }
                             <Badge badgeContent={newMessages} color="secondary">
-                                <IconButton style={{ color: "white" }}>
+                                <IconButton onClick={() => setModal(!showModal)} style={{ color: "white" }}>
                                     <ChatIcon></ChatIcon>
                                 </IconButton>
                             </Badge>
