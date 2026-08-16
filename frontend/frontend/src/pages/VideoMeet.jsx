@@ -359,9 +359,15 @@ export default function VideoMeetComponent() {
     };
 
     //TODO 
-    let addMessage = () => {
-
-    }
+        const addMessage = (data, sender, socketIdSender) => {
+        setMessages((prevMessages) => [
+            ...prevMessages,
+            { sender: sender, data: data }
+        ]);
+        if (socketIdSender !== socketIdRef.current) {
+            setNewMessages((prevNewMessages) => prevNewMessages + 1);
+        }
+    };
 
     const connectToSocketServer = () => {
         console.log("2. connectToSocketServer called");
@@ -553,7 +559,7 @@ export default function VideoMeetComponent() {
 
                                 <div className={styles.chattingArea}>
                                     <TextField id="outlined-basic" label="Message" variant="outlined" />
-                                    
+                                    <Button variant='contained' >Send</Button>
                                 </div>
                             </div>
                         </div> : <></>}
