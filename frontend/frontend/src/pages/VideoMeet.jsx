@@ -126,55 +126,55 @@ export default function VideoMeetComponent() {
     }
 
     let getDisplayMediaSucess = async (stream) => {
-    try {
-        window.localStream.getTracks().forEach(track => track.stop());
-    } catch (e) {
-        console.log(e);
-    }
-
-    window.localStream = stream;
-    localVideoRef.current.srcObject = stream;
-
-    for (let id in connections) {
-        if (id === socketIdRef.current) continue;
-
-        stream.getTracks().forEach(track => {
-            connections[id].addTrack(track, stream);
-        });
-
         try {
-            const offer = await connections[id].createOffer();
-
-            await connections[id].setLocalDescription(offer);
-
-            socketRef.current.emit(
-                "signal",
-                id,
-                JSON.stringify({
-                    sdp: connections[id].localDescription
-                })
-            );
+            window.localStream.getTracks().forEach(track => track.stop());
         } catch (e) {
-            console.log("Screen share offer error:", e);
+            console.log(e);
+        }
+
+        window.localStream = stream;
+        localVideoRef.current.srcObject = stream;
+
+        for (let id in connections) {
+            if (id === socketIdRef.current) continue;
+
+            stream.getTracks().forEach(track => {
+                connections[id].addTrack(track, stream);
+            });
+
+            try {
+                const offer = await connections[id].createOffer();
+
+                await connections[id].setLocalDescription(offer);
+
+                socketRef.current.emit(
+                    "signal",
+                    id,
+                    JSON.stringify({
+                        sdp: connections[id].localDescription
+                    })
+                );
+            } catch (e) {
+                console.log("Screen share offer error:", e);
+            }
+        }
+
+        stream.getVideoTracks()[0].onended = () => {
+            setScreen(false);
+
+            getUserMedia();
+        };
+    };
+
+
+    let getDisplayMedia = () => {
+        if (navigator.mediaDevices.getDisplayMedia) {
+            navigator.mediaDevices.getDisplayMedia({ video: true, audio: true })
+                .then(getDisplayMediaSucess)
+                .then((stream) => { })
+                .catch((e) => console.log(e))
         }
     }
-
-    stream.getVideoTracks()[0].onended = () => {
-        setScreen(false);
-
-        getUserMedia();
-    };
-};
-
-
-   let getDisplayMedia = () => {
-    if(navigator.mediaDevices.getDisplayMedia){
-        navigator.mediaDevices.getDisplayMedia({ video: true, audio: true }) 
-            .then(getDisplayMediaSucess)
-            .then((stream) => { })
-            .catch((e) => console.log(e))
-    }
-}
     // useEffect(() => {
     //     if (video !== undefined && audio !== undefined) {
     //         getUserMedia();
@@ -182,14 +182,14 @@ export default function VideoMeetComponent() {
     // }, [screen])
 
     let handleScreen = () => {
-    if (!screen) {
-        setScreen(true);
-        getDisplayMedia();
-    } else {
-        setScreen(false);
-        getUserMedia();
+        if (!screen) {
+            setScreen(true);
+            getDisplayMedia();
+        } else {
+            setScreen(false);
+            getUserMedia();
+        }
     }
-}
 
     let getUserMediaSucess = (stream) => {
         // try {
@@ -531,13 +531,32 @@ export default function VideoMeetComponent() {
 
                     </div> :
                     <div className={styles.meetVideoContainer}>
-                         {showModal ? <div className = {styles.chatRoom}>
-                           <div className = {styles.chatContainer}>
-                             <h1>Chat</h1>
-                             
-                             
-                           </div>
-                    </div> : <></> }
+                        {showModal ? <div className={styles.chatRoom}>
+                            <div className={styles.chatContainer}>
+                                <h1>Chat</h1>
+
+                                 <div className={styles.chattingDisplay}>
+
+                                {messages.length !== 0 ? messages.map((item, index) => {
+
+                                    console.log(messages)
+                                    return (
+                                        <div style={{ marginBottom: "20px" }} key={index}>
+                                            <p style={{ fontWeight: "bold" }}>{item.sender}</p>
+                                            <p>{item.data}</p>
+                                        </div>
+                                    )
+                                }) : <p>No Messages Yet</p>}
+
+
+                            </div>
+
+                                <div className={styles.chattingArea}>
+                                    <TextField id="outlined-basic" label="Message" variant="outlined" />
+                                    
+                                </div>
+                            </div>
+                        </div> : <></>}
 
                         <div className={styles.buttonContainers}>
                             <IconButton onClick={handleVideo} style={{ color: "white" }}>
