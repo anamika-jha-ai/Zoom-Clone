@@ -359,7 +359,7 @@ export default function VideoMeetComponent() {
     };
 
     //TODO -todo
-        const addMessage = (data, sender, socketIdSender) => {
+    const addMessage = (data, sender, socketIdSender) => {
         setMessages((prevMessages) => [
             ...prevMessages,
             { sender: sender, data: data }
@@ -367,6 +367,14 @@ export default function VideoMeetComponent() {
         if (socketIdSender !== socketIdRef.current) {
             setNewMessages((prevNewMessages) => prevNewMessages + 1);
         }
+    };
+
+    const sendMessage = () => {
+        console.log("Sending message:", message);
+
+        socketRef.current.emit("chat-message", message, userName);
+
+        setMessage("");
     };
 
     const connectToSocketServer = () => {
@@ -541,25 +549,34 @@ export default function VideoMeetComponent() {
                             <div className={styles.chatContainer}>
                                 <h1>Chat</h1>
 
-                                 <div className={styles.chattingDisplay}>
+                                <div className={styles.chattingDisplay}>
 
-                                {messages.length !== 0 ? messages.map((item, index) => {
+                                    {messages.length !== 0 ? messages.map((item, index) => {
 
-                                    console.log(messages)
-                                    return (
-                                        <div style={{ marginBottom: "20px" }} key={index}>
-                                            <p style={{ fontWeight: "bold" }}>{item.sender}</p>
-                                            <p>{item.data}</p>
-                                        </div>
-                                    )
-                                }) : <p>No Messages Yet</p>}
+                                        console.log(messages)
+                                        return (
+                                            <div style={{ marginBottom: "20px" }} key={index}>
+                                                <p style={{ fontWeight: "bold" }}>{item.sender}</p>
+                                                
+                                                <p>{item.data}</p>
+                                            </div>
+                                        )
+                                    }) : <p>No Messages Yet</p>}
 
 
-                            </div>
+                                </div>
 
                                 <div className={styles.chattingArea}>
-                                    <TextField id="outlined-basic" label="Message" variant="outlined" />
-                                    <Button variant='contained' >Send</Button>
+                                    <TextField
+                                        id="outlined-basic"
+                                        label="Message"
+                                        variant="outlined"
+                                        value={message}
+                                        onChange={(e) => setMessage(e.target.value)}
+                                    />
+                                    <Button variant='contained' onClick={sendMessage}>
+                                        Send
+                                    </Button>
                                 </div>
                             </div>
                         </div> : <></>}
