@@ -83,6 +83,16 @@ export const connectToSocket = (server) => { //Receives Express HTTP server.
                     messages[matchingRoom] = [];
                 }
                 messages[matchingRoom].push({ data: message, sender: socket.id, "socket-id-sender": socket.id });
+
+                // SEND MESSAGE TO EVERYONE IN THE ROOM
+                connections[matchingRoom].forEach((socketId) => {
+                    io.to(socketId).emit(
+                        "chat-message",
+                        message,
+                        socket.id,
+                        socket.id
+                    );
+                });
             }
         });
 
