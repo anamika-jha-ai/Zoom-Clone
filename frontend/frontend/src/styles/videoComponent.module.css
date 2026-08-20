@@ -13,6 +13,15 @@
     border-radius: 20px;
 }
 
+.localVideoContainer h2 {
+    position: absolute;
+    z-index: 1;
+    bottom: 29vh;
+    left: 10px;
+    color: white;
+    margin: 0;
+}
+
 .buttonContainers {
     position: absolute;
     width: 100vw;

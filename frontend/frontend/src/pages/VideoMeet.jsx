@@ -44,6 +44,7 @@ export default function VideoMeetComponent() {
     let [newMessages, setNewMessages] = useState(3);
     let [askForUsername, setAskForUsername] = useState(true);//for guest users
     let [userName, setUserName] = useState("");
+    let [participantNames, setParticipantNames] = useState({});
 
     const videoRef = useRef([]);
 
@@ -387,9 +388,8 @@ export default function VideoMeetComponent() {
             console.log("Socket connected");
             console.log("Socket ID:", socketRef.current.id);
 
-            socketRef.current.emit("join-call", window.location.href);
-
             socketIdRef.current = socketRef.current.id;
+            socketRef.current.emit("join-call", window.location.href, userName);
 
             socketRef.current.on("connect_error", (err) => {
                 console.log(err);
@@ -401,13 +401,15 @@ export default function VideoMeetComponent() {
                 setVideos((videos) => videos.filter((video) => video.socketId !== id))
             })
 
-            socketRef.current.on("user-joined", (id, clients) => {
+            socketRef.current.on("user-joined", (id, clients, names = {}) => {
 
                 /////////////
                 console.log("========== USER JOINED ==========");
                 console.log("Joined ID:", id);
                 console.log("Clients:", clients);
                 /////////////
+
+                setParticipantNames((currentNames) => ({ ...currentNames, ...names }));
 
 
                 clients.forEach((socketListId) => {
@@ -461,6 +463,7 @@ export default function VideoMeetComponent() {
 
                             const newVideo = {
                                 socketId: socketListId,
+                                userName: names[socketListId] || socketListId,
                                 stream: remoteStream,
                                 autoPlay: true,
                                 playsInline: true
@@ -604,11 +607,14 @@ export default function VideoMeetComponent() {
                             </Badge>
 
                         </div>
-                        <video className={styles.meetUserVideo} ref={localVideoRef} autoPlay muted></video>
+                        <div className={styles.localVideoContainer}>
+                            <h2>{userName}</h2>
+                            <video className={styles.meetUserVideo} ref={localVideoRef} autoPlay muted></video>
+                        </div>
                         <div className={styles.conferenceView}>
                             {videos.map((video) => (
                                 <div key={video.socketId}>
-                                    <h2>{video.socketId}</h2>
+                                    <h2>{video.userName || participantNames[video.socketId] || video.socketId}</h2>
                                     <video
                                         data-socket={video.socketId}
                                         ref={ref => {
