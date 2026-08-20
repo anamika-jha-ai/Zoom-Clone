@@ -2,6 +2,7 @@ import { Server } from "socket.io";
 
 let connections = {} // Stores meeting rooms and their connected socket ids
 let messages = {} //Stores chat history.
+let userNames = {} //Stores display names by socket id.
 let timeOnline = {} //Stores join time,used in call time calculation but does not stores in db or anything
 
 export const connectToSocket = (server) => { //Receives Express HTTP server.
@@ -20,13 +21,14 @@ export const connectToSocket = (server) => { //Receives Express HTTP server.
     //event liseteners whenever a client connects to the socket
     io.on("connection", (socket) => {
 
-        socket.on("join-call", (path) => { //path = room name
+        socket.on("join-call", (path, userName) => { //path = room name
             // Handle join-call event
 
             if (connections[path] == undefined) { //Create room if doesn't exist
                 connections[path] = [];
             }
             connections[path].push(socket.id);
+            userNames[socket.id] = userName || socket.id;
 
 
             timeOnline[socket.id] = Date.now();
@@ -36,7 +38,10 @@ export const connectToSocket = (server) => { //Receives Express HTTP server.
                 io.to(socketId).emit(
                     "user-joined",
                     socket.id,
-                    connections[path]
+                    connections[path],
+                    Object.fromEntries(
+                        connections[path].map((socketId) => [socketId, userNames[socketId]])
+                    )
                 );
             });
             ////////////////
@@ -115,6 +120,7 @@ export const connectToSocket = (server) => { //Receives Express HTTP server.
                         //Remove User ,Find index:
                         var index = connections[k].indexOf(socket.id);
                         connections[k].splice(index, 1);
+                        delete userNames[socket.id];
                     }
                     ////////////
                     connections[k].forEach((socketId) => {
