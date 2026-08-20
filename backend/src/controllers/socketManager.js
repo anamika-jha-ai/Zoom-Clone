@@ -68,7 +68,7 @@ export const connectToSocket = (server) => { //Receives Express HTTP server.
 
 
 
-        socket.on("chat-message", (message) => {
+        socket.on("chat-message", (message, sender) => {
             // Handle message event,Runs whenever someone sends chat.
             const [matchingRoom, found] = Object.entries(connections)//is just finding:Which room contains this socket.id?
                 .reduce(([rom, isFound], [roomKey, roomValue]) => {
@@ -82,14 +82,14 @@ export const connectToSocket = (server) => { //Receives Express HTTP server.
                 if (messages[matchingRoom] == undefined) {
                     messages[matchingRoom] = [];
                 }
-                messages[matchingRoom].push({ data: message, sender: socket.id, "socket-id-sender": socket.id });
+                messages[matchingRoom].push({ data: message, sender: sender || socket.id, "socket-id-sender": socket.id });
 
                 // SEND MESSAGE TO EVERYONE IN THE ROOM
                 connections[matchingRoom].forEach((socketId) => {
                     io.to(socketId).emit(
                         "chat-message",
                         message,
-                        socket.id,
+                        sender || socket.id,
                         socket.id
                     );
                 });
