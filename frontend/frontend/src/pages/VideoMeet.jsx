@@ -381,6 +381,7 @@ export default function VideoMeetComponent() {
         console.log("2. connectToSocketServer called");
         socketRef.current = io(server_url, { secure: false });
         socketRef.current.on('signal', gotMessageFromServer);
+        socketRef.current.on("chat-message", addMessage);
 
         socketRef.current.on("connect", () => {
             console.log("Socket connected");
@@ -390,7 +391,6 @@ export default function VideoMeetComponent() {
 
             socketIdRef.current = socketRef.current.id;
 
-            socketRef.current.on("chat-message", addMessage);
             socketRef.current.on("connect_error", (err) => {
                 console.log(err);
             });
