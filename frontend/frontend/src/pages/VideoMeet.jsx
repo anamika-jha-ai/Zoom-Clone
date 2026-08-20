@@ -192,6 +192,14 @@ export default function VideoMeetComponent() {
         }
     }
 
+     let handleEndCall = () => {
+        try {
+            let tracks = localVideoRef.current.srcObject.getTracks()
+            tracks.forEach(track => track.stop())
+        } catch (e) { }
+        window.location.href = "/"
+    }
+
     let getUserMediaSucess = (stream) => {
         // try {
         //     window.localStream.getTracks().forEach(track => track.stop())
@@ -588,7 +596,7 @@ export default function VideoMeetComponent() {
                             <IconButton onClick={handleVideo} style={{ color: "white" }}>
                                 {(video === true) ? <VideocamIcon /> : <VideocamOffIcon />}
                             </IconButton>
-                            <IconButton style={{ color: "red" }}>
+                            <IconButton onClick={handleEndCall} style={{ color: "red" }}>
                                 <CallEndIcon />
                             </IconButton>
                             <IconButton onClick={handleAudio} style={{ color: "white" }}>
@@ -596,7 +604,7 @@ export default function VideoMeetComponent() {
                             </IconButton>
                             {screenAvailable === true ?
                                 <IconButton onClick={handleScreen} style={{ color: "white" }}>
-                                    {screen === true ? <StopScreenShareIcon></StopScreenShareIcon> : <ScreenShareIcon></ScreenShareIcon>}
+                                    {screen === true ?  <ScreenShareIcon></ScreenShareIcon> : <StopScreenShareIcon></StopScreenShareIcon> }
                                 </IconButton>
                                 : null
                             }
