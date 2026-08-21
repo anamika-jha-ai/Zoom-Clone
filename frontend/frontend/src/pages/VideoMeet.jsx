@@ -197,7 +197,7 @@ export default function VideoMeetComponent() {
             let tracks = localVideoRef.current.srcObject.getTracks()
             tracks.forEach(track => track.stop())
         } catch (e) { }
-        window.location.href = "/"
+        window.location.href = "/home "
     }
 
     let getUserMediaSucess = (stream) => {
