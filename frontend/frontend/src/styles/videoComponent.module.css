@@ -1,7 +1,7 @@
 .meetVideoContainer {
     position: relative;
     height: 100vh;
-    background: rgb(103, 16, 90);
+    background: rgb(1, 4, 48);
 }
 
 .meetUserVideo {
@@ -11,15 +11,6 @@
     width: auto;
     left: 0;
     border-radius: 20px;
-}
-
-.localVideoContainer h2 {
-    position: absolute;
-    z-index: 1;
-    bottom: 29vh;
-    left: 10px;
-    color: white;
-    margin: 0;
 }
 
 .buttonContainers {
@@ -43,7 +34,7 @@
 
 .conferenceView  video {
     width: 40vw;
-    /* height: 20vh; */
+    height: 20vh;
     min-width: 30vw;
     border-radius: 10px;
 }
@@ -68,4 +59,3 @@
     position: absolute;
     bottom: 0;
 }
-
