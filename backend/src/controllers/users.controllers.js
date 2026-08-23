@@ -12,7 +12,9 @@ const login = async (req, res) => {
         return res.status(httpStatus.BAD_REQUEST).json({ message: 'Username and password are required' });
     }
     try {
-        const user = await User.findOne({ username });
+        const user = await User.findOne({
+            $or: [{ username: username.trim() }, { email: username.trim() }]
+        });
         if (!user) {
             return res.status(httpStatus.NOT_FOUND).json({ message: 'User not found' });
         }
@@ -72,10 +74,13 @@ const getUserHistory = async (req, res) => {
 
     try {
         const user = await User.findOne({ token: token });
+        if (!user) {
+            return res.status(httpStatus.UNAUTHORIZED).json({ message: 'Invalid or expired token' });
+        }
         const meetings = await Meeting.find({ user_id: user.username })
         res.json(meetings)
     } catch (e) {
-        res.json({ message: `Something went wrong ${e}` })
+        res.status(httpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Unable to load meeting history' })
     }
 }
 
@@ -84,6 +89,9 @@ const addToHistory = async (req, res) => {
 
     try {
         const user = await User.findOne({ token: token });
+        if (!user) {
+            return res.status(httpStatus.UNAUTHORIZED).json({ message: 'Invalid or expired token' });
+        }
 
         const newMeeting = new Meeting({
             user_id: user.username,
@@ -94,7 +102,7 @@ const addToHistory = async (req, res) => {
 
         res.status(httpStatus.CREATED).json({ message: "Added code to history" })
     } catch (e) {
-        res.json({ message: `Something went wrong ${e}` })
+        res.status(httpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Unable to save meeting history' })
     }
 }
 
