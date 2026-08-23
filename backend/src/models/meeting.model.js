@@ -1,22 +1,17 @@
-import mongoose from 'mongoose';
-
-const meetingSchema = require('./schemas/meeting.schema');
+import mongoose, { Schema } from 'mongoose';
 
 const meetingSchema = new Schema({
-    meetingId: {
+    user_id: {
         type: String,
-        required: true,
-    },
-    userId:{
-        type: String,
-        required: true,
-        unique: true
-    },
-    date:{
-        type: Date,
-        required: true,
-        default: Date.now,
         required: true
+    },
+    meetingCode: {
+        type: String,
+        required: true
+    },
+    date: {
+        type: Date,
+        default: Date.now
     }
 });
 
