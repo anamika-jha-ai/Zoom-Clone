@@ -1,4 +1,4 @@
-import axios, { HttpStatusCode } from "axios";
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { createContext, useContext, useState } from "react";
 import { StatusCodes } from "http-status-codes";
@@ -13,15 +13,11 @@ const client = axios.create({
 export const AuthProvider = ({ children }) => {
     const authContext = useContext(AuthContext);
     const [userData, setUserData] = useState(authContext);
-    const [error, setError] = React.useState();
-
-
-
-    const handleRegister = async (name, username, password, email) => {
+    const handleRegister = async (name, username, email, password) => {
         try {
             let request = await client.post("/register", {
                 name: name,
-                username: username,
+                username: username.trim(),
                 email: email,
                 password: password
             })
@@ -51,6 +47,11 @@ export const AuthProvider = ({ children }) => {
     }
 
     const router = useNavigate();
+    const handleLogout = () => {
+        localStorage.removeItem("token");
+        setUserData({});
+        router("/auth");
+    };
 
 
     const getHistoryOfUser = async () => {
@@ -79,7 +80,7 @@ export const AuthProvider = ({ children }) => {
         }
     }
     const data = {
-        userData, setUserData, handleRegister, handleLogin: handlelogin, getHistoryOfUser, addToUserHistory
+        userData, setUserData, handleRegister, handleLogin: handlelogin, handleLogout, getHistoryOfUser, addToUserHistory
     }
     return (
         <AuthContext.Provider value={data}>
