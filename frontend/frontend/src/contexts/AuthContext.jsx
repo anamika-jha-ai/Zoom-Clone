@@ -30,6 +30,7 @@ export const AuthProvider = ({ children }) => {
         }
     }
 
+    // ITS A LOGIN FUNCTION NOT A REGISTER FUNCTION
     const handlelogin = async (username, password) => {
         try {
             let request = await client.post("/login", {
