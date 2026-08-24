@@ -89,3 +89,5 @@ export const AuthProvider = ({ children }) => {
         </AuthContext.Provider>
     )
 }
+
+console.log("project is running");
